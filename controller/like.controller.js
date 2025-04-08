@@ -1,38 +1,87 @@
 const db = require('../config')
 
 class LikeController{
-    async createLike(req, res) {
-        const { user_id, post_id } = req.body;
     
-            const insertSql = `INSERT INTO pages (user_id, post_id) VALUES (?,?)`;
+      // Используем стрелочную функцию для сохранения контекста
+      constructor() {
+        // Привязываем контекст для методов
+        this.changeLike = this.changeLike.bind(this);
+        this.checkLike = this.checkLike.bind(this);
+      }
     
-            db.run(insertSql, [user_id, post_id], function (err) {
-                if (err) {
-                    return res.status(500).json({ error: 'Ошибка при создании like', details: err });
-                }
-    
-                return res.status(201).json({
-                    message: 'like успешно создана',
-                    like_id: this.lastID
-                });
-            });
-    }
-    
-    async deleteLike(req, res) {
-        const { id } = req.body;
-    
-        const sql = `DELETE FROM likes WHERE id = ?`;
-    
-        db.run(sql, [id], function (err) {
-            if (err) return res.status(500).json({ error: 'Ошибка при удалении like', details: err });
-    
-            if (this.changes === 0) {
-                return res.status(404).json({ message: 'like не найдена' });
-            }
-    
-            res.status(200).json({ message: 'like удалёна' });
+      // Используем стрелочную функцию для сохранения контекста
+      checkLike = async (post_id, user_id) => {
+        return new Promise((resolve, reject) => {
+          const query = `SELECT * FROM likes WHERE posts_id = ? AND user_id = ?`;
+          db.get(query, [post_id, user_id], (err, row) => {
+            if (err) reject(err);
+            resolve(!!row);
+          });
         });
+      }
+    
+      // Универсальная функция для добавления/удаления лайка
+      async changeLike(req, res) {
+        const { posts_id, user_id } = req.body;
+      
+        if (!posts_id || !user_id) {
+          return res.status(400).json({ message: 'Поля posts_id и user_id обязательны' });
+        }
+      
+        try {
+          const isLiked = await this.checkLike(posts_id, user_id); 
+          if (isLiked) {
+            // Удаление лайка
+            db.run('DELETE FROM likes WHERE posts_id = ? AND user_id = ?', 
+              [posts_id, user_id], 
+              function (err) {
+                if (err) {
+                  console.error('Ошибка удаления:', err); // Лог ошибки
+                  return res.status(500).json({ message: 'Ошибка удаления' });
+                }
+                
+                if (this.changes === 0) {
+                  return res.status(404).json({ message: 'Лайк не найден' });
+                }
+                
+                res.status(200).json({ message: 'Лайк удалён' });
+              }
+            );
+          } else {
+            // Добавление лайка
+            db.run('INSERT INTO likes (posts_id, user_id) VALUES (?, ?)',
+              [posts_id, user_id],
+              function (err) {
+                if (err) {
+                  console.error('Ошибка добавления:', err); // Лог ошибки
+                  return res.status(500).json({ message: 'Ошибка добавления' });
+                }
+                
+                res.status(201).json({ id: this.lastID, message: 'Лайк добавлен' });
+              }
+            );
+          }
+        } catch (error) {
+          console.error('Критическая ошибка:', error); // Лог критической ошибки
+          res.status(500).json({ message: 'Ошибка при обработке лайка' });
+        }
+      }
+    
+      // Получить все лайки для поста (осталось без изменений)
+      async getPostLikes(req, res) {
+        const { posts_id } = req.body;
+        const query = `SELECT * FROM likes WHERE posts_id = ?`;
+        
+        db.all(query, [posts_id], (err, rows) => {
+          if (err) {
+            console.error(err);
+            return res.status(500).json({ message: 'Ошибка получения лайков' });
+          }
+          res.status(200).json(rows);
+        });
+      }
     }
-}
+    
+
 
 module.exports = new LikeController()

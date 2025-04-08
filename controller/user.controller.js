@@ -5,37 +5,74 @@ const db = require('../config')
 class UserController{
 
     async createUser(req, res) {
-        const { nickname, login, password, topic_id } = req.body;
+        try {
+            const { name, login, password, topic1_id, topic2_id, topic3_id, topic4_id } = req.body;
     
-        const checkSql = `
-            SELECT * FROM users WHERE nickname = ? OR login = ?
-        `;
-    
-        db.all(checkSql, [nickname, login], (err, rows) => {
-            if (err) {
-                return res.status(500).json({ error: 'Ошибка при проверке пользователя', details: err });
+            // Проверка обязательных полей
+            if (!name || !login || !password) {
+                return res.status(400).json({ error: 'Необходимо заполнить все обязательные поля: name, login, password' });
             }
     
-            if (rows.length > 0) {
-                return res.status(400).json({ error: 'Такой логин или ник уже используется' });
-            }
-    
-            const insertSql = `
-                INSERT INTO users (nickname, login, password, topic_id)
-                VALUES (?, ?, ?, ?)
+            // Проверка уникальности логина и имени
+            const checkUserSql = `
+                SELECT * FROM users WHERE name = ? OR login = ?
             `;
-    
-            db.run(insertSql, [nickname, login, password, topic_id], function (err) {
+            db.all(checkUserSql, [name, login], (err, rows) => {
                 if (err) {
-                    return res.status(500).json({ error: 'Ошибка при создании пользователя', details: err });
+                    console.error('Ошибка при проверке пользователя:', err);
+                    return res.status(500).json({ error: 'Ошибка при проверке пользователя', details: err.message });
                 }
     
-                return res.status(201).json({
-                    message: 'Пользователь успешно создан',
-                    user_id: this.lastID
+                if (rows.length > 0) {
+                    return res.status(400).json({ error: 'Такой логин или имя уже используются' });
+                }
+    
+                // Проверка существования тем в таблице topics
+                const checkTopicsSql = `
+                    SELECT id FROM topics WHERE id IN (?, ?, ?, ?)
+                `;
+                db.all(checkTopicsSql, [topic1_id, topic2_id, topic3_id, topic4_id], (err, topics) => {
+                    if (err) {
+                        console.error('Ошибка при проверке тем:', err);
+                        return res.status(500).json({ error: 'Ошибка при проверке тем', details: err.message });
+                    }
+    
+                    // Получаем массив существующих ID тем
+                    const existingTopicIds = topics.map(topic => topic.id);
+    
+                    // Проверяем, что все указанные topicX_id существуют
+                    const providedTopicIds = [topic1_id, topic2_id, topic3_id, topic4_id].filter(id => id !== null);
+                    const invalidTopicIds = providedTopicIds.filter(id => !existingTopicIds.includes(id));
+    
+                    if (invalidTopicIds.length > 0) {
+                        return res.status(400).json({
+                            error: `Следующие ID тем не существуют: ${invalidTopicIds.join(', ')}`
+                        });
+                    }
+    
+                    // Вставка нового пользователя
+                    const insertSql = `
+                        INSERT INTO users (name, login, password, topic1_id, topic2_id, topic3_id, topic4_id)
+                        VALUES (?, ?, ?, ?, ?, ?, ?)
+                    `;
+                    db.run(insertSql, [name, login, password, topic1_id, topic2_id, topic3_id, topic4_id], function (err) {
+                        if (err) {
+                            console.error('Ошибка при создании пользователя:', err);
+                            return res.status(500).json({ error: 'Ошибка при создании пользователя', details: err.message });
+                        }
+    
+                        // Успешный ответ
+                        return res.status(201).json({
+                            message: 'Пользователь успешно создан',
+                            user_id: this.lastID
+                        });
+                    });
                 });
             });
-        });
+        } catch (error) {
+            console.error('Неожиданная ошибка:', error);
+            return res.status(500).json({ error: 'Неожиданная ошибка сервера', details: error.message });
+        }
     }
       
 

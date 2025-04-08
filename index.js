@@ -5,6 +5,7 @@ const postRouter = require('./routes/post.routes')
 const pageRouter = require('./routes/page.routes')
 const kvizRouter = require('./routes/kviz.routes')
 const courseRouter = require('./routes/course.routes')
+const likeRouter = require('./routes/like.routes')
 
 const bodyParser = require('body-parser');
 
@@ -19,6 +20,7 @@ app.use('/api', postRouter)
 app.use('/api', pageRouter)
 app.use('/api', kvizRouter)
 app.use('/api', courseRouter)
+app.use('/api', likeRouter)
 
 app.listen(PORT, () => console.log(`Сервер запущен с портом: ${PORT}`))
 

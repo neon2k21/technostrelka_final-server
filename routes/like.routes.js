@@ -1,8 +1,11 @@
 const Router = require('express')
 const router = new Router()
-const LikeController = require('../controller/like.controller')
+const postLikesController = require('../controller/like.controller.js')
 
-router.post('/createLike', LikeController.createLike)
-router.post('/deleteLike', LikeController.deleteLike)
+router.post('/changeLike', postLikesController.changeLike)
+router.post('/checkLike', postLikesController.checkLike)
+
+router.post('/getPostLikes', postLikesController.getPostLikes);
+
 
 module.exports = router
