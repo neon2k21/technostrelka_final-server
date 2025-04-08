@@ -183,6 +183,17 @@ class UserController{
                 return res.status(500).json({ error: 'Внутренняя ошибка сервера', details: error });
             }
         }
+        async getAllUserforlist(req,res){
+            const { name,points} = req.body
+            const sql = (
+                `select name,points from users;`
+            )
+            db.all(sql,[name,points], (err,rows) => {
+                if (err) return res.json(err)
+                if(rows.length === 0) return res.json('Данные не совпадают! Проверьте и повторите попытку')
+                else res.json(rows)
+        })
+        }
     }
 
 module.exports = new UserController()
