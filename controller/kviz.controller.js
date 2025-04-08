@@ -68,6 +68,16 @@ class KvizController{
             else res.json(rows)
     })
     }
+    async getAllKviz(req,res){
+        const sql = (
+            `select * from kviz;`
+        )
+        db.all(sql, (err,rows) => {
+            if (err) return res.json(err)
+            if(rows.length === 0) return res.json('Данные не совпадают! Проверьте и повторите попытку')
+            else res.json(rows)
+    })
+    }
 
     async completeKviz(req, res) {
         try {
