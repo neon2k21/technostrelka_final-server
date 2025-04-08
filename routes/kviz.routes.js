@@ -8,4 +8,6 @@ router.delete('/deleteKviz', KvizController.deleteKviz)
 router.post('/completeKviz', KvizController.completeKviz)
 router.post('/getSplashKviz', KvizController.getSplashKviz)
 router.get('/getAllKviz', KvizController.getAllKviz)
+router.get('/getPageKviz', KvizController.getPageKviz)
+
 module.exports = router

@@ -200,6 +200,18 @@ class KvizController{
             return res.status(500).json({ error: 'Неожиданная ошибка сервера', details: error.message });
         }
     }
+    async getPageKviz(req,res){
+        const{id} = req.body
+        const sql = (
+            `select name, questions from kviz where id= ?;`
+        )
+        db.all(sql,[id], (err,rows) => {
+            if (err) return res.json(err)
+            if(rows.length === 0) return res.json('Данные не совпадают! Проверьте и повторите попытку')
+            else res.json(rows)
+    })
+    }
+
 
 }
 
