@@ -3,12 +3,13 @@ const db = require('../config')
 class PageController{
     async createPage(req, res) {
         const { course_id, title, type, value, order } = req.body;
+        console.log(course_id, title, type, value, order)
     
-            const insertSql = `INSERT INTO pages (course_id, title, type, value, order) VALUES (?,?,?,?,?)`;
+            const insertSql = `INSERT INTO pages (course_id, title, type, value, "order") VALUES (?,?,?,?,?);`;
     
             db.run(insertSql, [course_id, title, type, value, order], function (err) {
                 if (err) {
-                    return res.status(500).json({ error: 'Ошибка при создании страницы', details: err });
+                    return res.status(500).json({ error: 'Ошибка при создании страницы', details: err.message });
                 }
     
                 return res.status(201).json({
@@ -21,7 +22,7 @@ class PageController{
     async deletePage(req, res) {
         const { id } = req.body;
     
-        const sql = `DELETE FROM page WHERE id = ?`;
+        const sql = `DELETE FROM pages WHERE id = ?`;
     
         db.run(sql, [id], function (err) {
             if (err) return res.status(500).json({ error: 'Ошибка при удалении страницы', details: err });
@@ -37,7 +38,7 @@ class PageController{
     async getPage(req,res){
         const { id } = req.body
         const sql = (
-            `select * from pages where (id);`
+            `select * from pages where (id=?);`
         )
         db.all(sql,[id], (err,rows) => {
             if (err) return res.json(err)
