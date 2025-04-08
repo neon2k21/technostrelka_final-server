@@ -46,15 +46,28 @@ class PostController{
     })
     }
 
-    async getAllPost(req,res){
-        const sql = (
-            `select * from posts;`
-        )
-        db.all(sql, (err,rows) => {
-            if (err) return res.json(err)
-            if(rows.length === 0) return res.json('Данные не совпадают! Проверьте и повторите попытку')
-            else res.json(rows)
-    })
+    async getAllPost(req, res) {
+        const sql = `
+            SELECT 
+                posts.id AS post_id,
+                posts.description AS post_description,
+                posts.image AS post_image,
+                topics.name AS topic_name
+            FROM 
+                posts
+            LEFT JOIN 
+                topics ON posts.topic_id = topics.id;
+        `;
+        db.all(sql, (err, rows) => {
+            if (err) {
+                return res.status(500).json({ error: 'Ошибка при получении постов', details: err });
+            }
+            if (rows.length === 0) {
+                return res.status(404).json({ message: 'Посты не найдены' });
+            } else {
+                return res.json(rows);
+            }
+        });
     }
     
     
