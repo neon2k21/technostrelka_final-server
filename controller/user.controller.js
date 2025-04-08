@@ -63,7 +63,19 @@ class UserController{
             if (err) return res.json(err)
             else res.json(rows)
          })
-    }    
+    } 
+    
+    async setUserNickname(req,res){
+        const {name, id} =req.body
+        const sql = (
+            ` update users set name=? where id=?;`
+        )
+
+        db.all(sql,[name, id], (err,rows) => {
+            if (err) return res.json(err)
+            else res.json(rows)
+        })
+    }
 }
 
 
