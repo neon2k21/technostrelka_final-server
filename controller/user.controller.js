@@ -76,8 +76,76 @@ class UserController{
             else res.json(rows)
         })
     }
-}
-
-
+    
+        async calculatePercentByTopic(req, res) {
+            try {
+                // Получаем список всех пользователей
+                const getUsersSql = `
+                    SELECT id, topic_id FROM users;
+                `;
+                db.all(getUsersSql, [], (err, users) => {
+                    if (err) {
+                        return res.status(500).json({ error: 'Ошибка при получении пользователей', details: err });
+                    }
+    
+                    // Для каждого пользователя рассчитываем проценты
+                    users.forEach(user => {
+                        const userId = user.id;
+                        const topicId = user.topic_id;
+    
+                        // Подсчитываем количество лайков пользователя по данной теме
+                        const countLikesSql = `
+                            SELECT COUNT(*) as like_count 
+                            FROM likes 
+                            JOIN posts ON likes.posts_id = posts.id 
+                            WHERE likes.user_id = ? AND posts.topic_id = ?;
+                        `;
+                        db.get(countLikesSql, [userId, topicId], (err, likeCountResult) => {
+                            if (err) {
+                                console.error('Ошибка при подсчете лайков:', err);
+                                return;
+                            }
+    
+                            // Получаем общее количество постов по данной теме
+                            const countPostsSql = `
+                                SELECT COUNT(*) as post_count 
+                                FROM posts 
+                                WHERE topic_id = ?;
+                            `;
+                            db.get(countPostsSql, [topicId], (err, postCountResult) => {
+                                if (err) {
+                                    console.error('Ошибка при подсчете постов:', err);
+                                    return;
+                                }
+    
+                                // Рассчитываем процент
+                                const likeCount = likeCountResult.like_count || 0;
+                                const postCount = postCountResult.post_count || 1; // Избегаем деления на ноль
+                                const percent = (likeCount / postCount) * 100;
+    
+                                // Обновляем поле percent_by_topic в таблице users
+                                const updatePercentSql = `
+                                    UPDATE users 
+                                    SET percent_by_topic = ? 
+                                    WHERE id = ?;
+                                `;
+                                db.run(updatePercentSql, [percent, userId], function (err) {
+                                    if (err) {
+                                        console.error('Ошибка при обновлении процента:', err);
+                                        return;
+                                    }
+                                });
+                            });
+                        });
+                    });
+    
+                    // Возвращаем успешный ответ
+                    return res.status(200).json({ message: 'Проценты успешно рассчитаны и обновлены' });
+                });
+            } catch (error) {
+                return res.status(500).json({ error: 'Внутренняя ошибка сервера', details: error });
+            }
+        }
+    }
 
 module.exports = new UserController()

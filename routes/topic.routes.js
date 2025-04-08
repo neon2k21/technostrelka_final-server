@@ -3,8 +3,8 @@ const router = new Router()
 const TopicController = require('../controller/topic.controller')
 
 router.post('/createTopic', TopicController.createTopic)
-router.post('/getTopic', TopicController.deleteTopic)
+router.get('/getTopic', TopicController.deleteTopic)
 router.delete('/deleteTopic', TopicController.getTopic)
-
+router.get('/getAllTopic', TopicController.getAllTopic)
 
 module.exports = router

@@ -3,8 +3,8 @@ const router = new Router()
 const KvizController = require('../controller/kviz.controller')
 
 router.post('/createKviz', KvizController.createKviz)
-router.post('/getKviz', KvizController.deleteKviz)
-router.delete('/deleteKviz', KvizController.getKviz)
+router.get('/getKviz', KvizController.getKviz)
+router.delete('/deleteKviz', KvizController.deleteKviz)
 
 
 module.exports = router

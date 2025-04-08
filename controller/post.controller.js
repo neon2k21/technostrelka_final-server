@@ -2,17 +2,17 @@ const db = require('../config')
 
 class PostController{
     async createPost(req, res) {
-        const { description, image } = req.body;
+        const { description, image, topic_id } = req.body;
     
-            const insertSql = `INSERT INTO posts ( description, image) VALUES (?,?,?)`;
+            const insertSql = `INSERT INTO posts ( description, image, topic_id) VALUES (?,?,?)`;
     
-            db.run(insertSql, [name, description, image], function (err) {
+            db.run(insertSql, [ description, image, topic_id], function (err) {
                 if (err) {
                     return res.status(500).json({ error: 'Ошибка при создании поста', details: err });
                 }
     
                 return res.status(201).json({
-                    message: 'Пост успешно создана',
+                    message: 'Пост успешно создан',
                     post_id: this.lastID
                 });
             });
@@ -45,6 +45,18 @@ class PostController{
             else res.json(rows)
     })
     }
+
+    async getAllPost(req,res){
+        const sql = (
+            `select * from posts;`
+        )
+        db.all(sql, (err,rows) => {
+            if (err) return res.json(err)
+            if(rows.length === 0) return res.json('Данные не совпадают! Проверьте и повторите попытку')
+            else res.json(rows)
+    })
+    }
+    
     
 
 }

@@ -61,6 +61,17 @@ class TopicController{
             else res.json(rows)
     })
     }
+
+    async getAllTopic(req,res){
+        const sql = (
+            `select * from topics;`
+        )
+        db.all(sql, (err,rows) => {
+            if (err) return res.json(err)
+            if(rows.length === 0) return res.json('Данные не совпадают! Проверьте и повторите попытку')
+            else res.json(rows)
+    })
+    }
     
 
 }
