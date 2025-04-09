@@ -3,7 +3,7 @@ const router = new Router()
 const courseController = require('../controller/curses.controller')
 
 router.post('/createCourse', courseController.createCourse)
-router.get('/getCourse', courseController.getCourse)
+router.post('/getCourse', courseController.getCourse)
 router.delete('/deleteCourse', courseController.deleteCourse)
 router.get('/getAllCourse', courseController.getAllCourse)
 

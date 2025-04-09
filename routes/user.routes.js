@@ -9,6 +9,6 @@ router.put('/updateNick', userController.setUserNickname)
 router.post('/percent', userController.calculatePercentByTopic)
 router.get('/getAllUserforlist', userController.getAllUserforlist)
 router.post('/calculatePercentByTopic', userController.calculatePercentByTopic)
-
+router.get('/getPercent',userController.getPercent)
 module.exports = router
 

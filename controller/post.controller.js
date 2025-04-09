@@ -2,13 +2,13 @@ const db = require('../config')
 
 class PostController{
     async createPost(req, res) {
-        const { description, image, topic_id } = req.body;
+        const { description, topic_id, image } = req.body;
     
-            const insertSql = `INSERT INTO posts ( description, image, topic_id) VALUES (?,?,?)`;
+            const insertSql = `INSERT INTO posts ( description, topic_id, image) VALUES (?,?,?)`;
     
-            db.run(insertSql, [ description, image, topic_id], function (err) {
+            db.run(insertSql, [ description, topic_id, image], function (err) {
                 if (err) {
-                    return res.status(500).json({ error: 'Ошибка при создании поста', details: err });
+                    return res.status(500).json({ error: 'Ошибка при создании поста', details: err.message});
                 }
     
                 return res.status(201).json({

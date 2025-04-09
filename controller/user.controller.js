@@ -119,7 +119,7 @@ class UserController{
         try {
             // Получаем список всех пользователей
             const getUsersSql = `
-                SELECT id FROM users;
+                SELECT id, percent_by_topic FROM users;
             `;
             db.all(getUsersSql, [], (err, users) => {
                 if (err) {
@@ -129,6 +129,16 @@ class UserController{
                 // Для каждого пользователя рассчитываем проценты по всем темам
                 users.forEach(user => {
                     const userId = user.id;
+    
+                    // Получаем текущие проценты из базы данных
+                    let existingPercents = {};
+                    try {
+                        if (user.percent_by_topic) {
+                            existingPercents = JSON.parse(user.percent_by_topic);
+                        }
+                    } catch (error) {
+                        console.error(`Ошибка при парсинге percent_by_topic для user_id=${userId}:`, error);
+                    }
     
                     // Получаем все темы из таблицы topics
                     const getTopicsSql = `
@@ -141,7 +151,7 @@ class UserController{
                         }
     
                         // Инициализируем объект для хранения процентов
-                        let percentsByTopic = {};
+                        let percentsByTopic = { ...existingPercents };
     
                         // Для каждой темы рассчитываем проценты
                         topics.forEach(topic => {
@@ -178,7 +188,7 @@ class UserController{
                                     const postCount = postCountResult.post_count || 1; // Избегаем деления на ноль
                                     const percent = ((likeCount / postCount) * 100).toFixed(2);
     
-                                    // Добавляем процент для текущей темы с использованием имени темы
+                                    // Добавляем процент для текущей темы
                                     percentsByTopic[topicName] = parseFloat(percent);
     
                                     // Если все темы обработаны, обновляем запись в базе данных
@@ -209,12 +219,64 @@ class UserController{
             return res.status(500).json({ error: 'Внутренняя ошибка сервера', details: error.message });
         }
     }
+    async updatePercentFromBot(req, res) {
+        try {
+            const { user_id, percentages } = req.body;
+    
+            // Проверяем, переданы ли все обязательные поля
+            if (!user_id || !percentages) {
+                return res.status(400).json({ error: 'Необходимо указать user_id и percentages' });
+            }
+    
+            // Преобразуем проценты в JSON-строку
+            const percentagesJson = JSON.stringify(percentages);
+    
+            // Обновляем поле percent_by_topic для пользователя
+            const updateSql = `
+                UPDATE users 
+                SET percent_by_topic = ? 
+                WHERE id = ?;
+            `;
+            db.run(updateSql, [percentagesJson, user_id], function (err) {
+                if (err) {
+                    console.error('Ошибка при обновлении процентов от бота:', err);
+                    return res.status(500).json({ error: 'Ошибка сервера', details: err.message });
+                }
+    
+                if (this.changes === 0) {
+                    return res.status(404).json({ error: 'Пользователь не найден' });
+                }
+    
+                return res.status(200).json({
+                    message: 'Проценты успешно обновлены',
+                    user_id: user_id,
+                    percentages: percentages
+                });
+            });
+        } catch (error) {
+            console.error('Неожиданная ошибка:', error);
+            return res.status(500).json({ error: 'Внутренняя ошибка сервера', details: error.message });
+        }
+    }
         async getAllUserforlist(req,res){
             const { name,points} = req.body
             const sql = (
                 `select name,points from users;`
             )
             db.all(sql,[name,points], (err,rows) => {
+                if (err) return res.json(err)
+                if(rows.length === 0) return res.json('Данные не совпадают! Проверьте и повторите попытку')
+                else res.json(rows)
+        })
+        }
+        async getPercent(req,res){
+            const {id} = req.body
+        
+            console.log(id)
+            const sql = (
+                `select percent_by_topic from users where id=?;`
+            )
+            db.all(sql,[id], (err,rows) => {
                 if (err) return res.json(err)
                 if(rows.length === 0) return res.json('Данные не совпадают! Проверьте и повторите попытку')
                 else res.json(rows)
