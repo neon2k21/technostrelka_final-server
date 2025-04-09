@@ -60,11 +60,11 @@ class PageController{
     }
 
     async getPage(req,res){
-        const { id } = req.body
+        const { course_id } = req.body
         const sql = (
-            `select * from pages where (id=?);`
+            `select * from pages where (course_id=?);`
         )
-        db.all(sql,[id], (err,rows) => {
+        db.all(sql,[course_id], (err,rows) => {
             if (err) return res.json(err)
             if(rows.length === 0) return res.json('Данные не совпадают! Проверьте и повторите попытку')
             else res.json(rows)
