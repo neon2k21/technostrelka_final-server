@@ -3,7 +3,7 @@ const router = new Router()
 const PageController = require('../controller/page.controller')
 
 router.post('/createPage', PageController.createPage)
-router.get('/getPage', PageController.getPage)
+router.post('/getPage', PageController.getPage)
 router.delete('/deletePage', PageController.deletePage)
 
 
