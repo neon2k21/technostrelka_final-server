@@ -13,20 +13,6 @@ class UserController{
                 return res.status(400).json({ error: 'Необходимо заполнить все обязательные поля: name, login, password' });
             }
     
-            // Проверка уникальности логина и имени
-            const checkUserSql = `
-                SELECT * FROM users WHERE name = ? OR login = ?
-            `;
-            db.all(checkUserSql, [name, login], (err, rows) => {
-                if (err) {
-                    console.error('Ошибка при проверке пользователя:', err);
-                    return res.status(500).json({ error: 'Ошибка при проверке пользователя', details: err.message });
-                }
-    
-                if (rows.length > 0) {
-                    return res.status(400).json({ error: 'Такой логин или имя уже используются' });
-                }
-    
                 // Проверка существования тем в таблице topics
                 const checkTopicsSql = `
                     SELECT id FROM topics WHERE id IN (?, ?, ?, ?)
@@ -68,7 +54,6 @@ class UserController{
                         });
                     });
                 });
-            });
         } catch (error) {
             console.error('Неожиданная ошибка:', error);
             return res.status(500).json({ error: 'Неожиданная ошибка сервера', details: error.message });
@@ -258,17 +243,34 @@ class UserController{
             return res.status(500).json({ error: 'Внутренняя ошибка сервера', details: error.message });
         }
     }
-        async getAllUserforlist(req,res){
-            const { name,points} = req.body
-            const sql = (
-                `select name,points from users;`
-            )
-            db.all(sql,[name,points], (err,rows) => {
-                if (err) return res.json(err)
-                if(rows.length === 0) return res.json('Данные не совпадают! Проверьте и повторите попытку')
-                else res.json(rows)
-        })
+    async getAllUserforlist(req, res) {
+        try {
+            // SQL-запрос для получения первых пяти пользователей с наивысшими очками
+            const sql = `
+                SELECT name, points 
+                FROM users
+                ORDER BY points DESC
+                LIMIT 5;
+            `;
+    
+            db.all(sql, [], (err, rows) => {
+                if (err) {
+                    console.error('Ошибка при получении пользователей:', err);
+                    return res.status(500).json({ error: 'Ошибка сервера', details: err.message });
+                }
+    
+                if (rows.length === 0) {
+                    return res.status(404).json({ error: 'Пользователи не найдены' });
+                }
+    
+                // Возвращаем список из первых пяти пользователей
+                return res.status(200).json(rows);
+            });
+        } catch (error) {
+            console.error('Неожиданная ошибка:', error);
+            return res.status(500).json({ error: 'Внутренняя ошибка сервера', details: error.message });
         }
+    }
         async getPercent(req,res){
             const {id} = req.body
         
@@ -278,6 +280,33 @@ class UserController{
             )
             db.all(sql,[id], (err,rows) => {
                 if (err) return res.json(err)
+                if(rows.length === 0) return res.json('Данные не совпадают! Проверьте и повторите попытку')
+                else res.json(rows)
+        })
+        }
+//Profily
+        async getInfobyProfily(req,res){
+            const {id} = req.body
+        
+            console.log(id)
+            const sql = (
+                `select name, points, topic1_id, topic2_id, topic3_id, topic4_id from users where id=?;`
+            )
+            db.all(sql,[id], (err,rows) => {
+                if (err) return res.json(err)
+                if(rows.length === 0) return res.json('Данные не совпадают! Проверьте и повторите попытку')
+                else res.json(rows)
+        })
+        }
+        async insertCompletedCourse(req,res){
+            const {user_id,course_id} = req.body
+    
+            const sql = (
+                `INSERT INTO completed_course (user_id,course_id)
+                        VALUES (?, ?)`
+            )
+            db.all(sql,[user_id,course_id], (err,rows) => {
+                if (err) return res.json(err.message)
                 if(rows.length === 0) return res.json('Данные не совпадают! Проверьте и повторите попытку')
                 else res.json(rows)
         })
