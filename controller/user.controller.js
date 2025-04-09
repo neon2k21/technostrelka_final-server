@@ -95,10 +95,10 @@ class UserController{
     async deleteUser(req,res){
         const { id } = req.body
         const sql = (
-            `delete * from users where id =?;`
+            `delete from users where id =?;`
         )
         db.all(sql,[id], (err,rows) => {
-            if (err) return res.json(err)
+            if (err) return res.json(err.message)
             else res.json(rows)
          })
     } 

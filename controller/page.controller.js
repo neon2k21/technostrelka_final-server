@@ -2,13 +2,33 @@ const db = require('../config')
 
 class PageController{
     async createPage(req, res) {
-        const { course_id, title, type, value, order } = req.body;
-        console.log(course_id, title, type, value, order)
+        try {
+            const { course_id, name, blocks, order } = req.body;
     
-            const insertSql = `INSERT INTO pages (course_id, title, type, value, "order") VALUES (?,?,?,?,?);`;
+            // Проверяем, что все обязательные поля переданы
+            if (!course_id || !name || !Array.isArray(blocks) || order === undefined) {
+                return res.status(400).json({ error: 'Необходимо заполнить все обязательные поля' });
+            }
     
-            db.run(insertSql, [course_id, title, type, value, order], function (err) {
+            // Проверяем, что каждый блок содержит type и content
+            for (const block of blocks) {
+                if (!block.type || !block.content) {
+                    return res.status(400).json({ error: 'Каждый блок должен содержать поля type и content' });
+                }
+            }
+    
+            // Преобразуем массив блоков в JSON-строку
+            const blocksJson = JSON.stringify(blocks);
+    
+            // SQL-запрос для создания страницы
+            const insertSql = `
+                INSERT INTO pages (course_id, name, blocks, "order")
+                VALUES (?, ?, ?, ?);
+            `;
+    
+            db.run(insertSql, [course_id, name, blocksJson, order], function (err) {
                 if (err) {
+                    console.error('Ошибка при создании страницы:', err);
                     return res.status(500).json({ error: 'Ошибка при создании страницы', details: err.message });
                 }
     
@@ -17,6 +37,10 @@ class PageController{
                     page_id: this.lastID
                 });
             });
+        } catch (error) {
+            console.error('Неожиданная ошибка:', error);
+            return res.status(500).json({ error: 'Неожиданная ошибка сервера', details: error.message });
+        }
     }
     
     async deletePage(req, res) {
