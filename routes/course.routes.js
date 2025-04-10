@@ -6,6 +6,6 @@ router.post('/createCourse', courseController.createCourse)
 router.post('/getCourse', courseController.getCourse)
 router.delete('/deleteCourse', courseController.deleteCourse)
 router.get('/getAllCourse', courseController.getAllCourse)
-
+router.post('/getCoursesByUserTopics', courseController.getCoursesByUserTopics)
 
 module.exports = router

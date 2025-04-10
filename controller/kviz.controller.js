@@ -212,6 +212,84 @@ class KvizController{
     })
     }
 
+    async insertCompletedKviz(req, res) {
+        try {
+            const { user_id, kviz_id } = req.body;
+    
+            // Проверяем, что все обязательные поля переданы
+            if (!user_id || !kviz_id) {
+                return res.status(400).json({ error: "Необходимо указать user_id и kviz_id" });
+            }
+    
+            // SQL-запрос для добавления завершенного квиза
+            const sql = `
+                INSERT INTO completed_kviz (user_id, kviz_id)
+                VALUES (?, ?);
+            `;
+    
+            // Выполняем запрос к базе данных
+            db.run(sql, [user_id, kviz_id], function (err) {
+                if (err) {
+                    console.error("Ошибка при добавлении завершенного квиза:", err);
+                    return res.status(500).json({ error: "Ошибка сервера", details: err.message });
+                }
+    
+                // Проверяем, была ли запись успешно добавлена
+                if (this.changes === 0) {
+                    return res.status(500).json({ error: "Не удалось добавить завершенный квиз" });
+                }
+    
+                // Возвращаем успешный ответ
+                return res.status(200).json({
+                    message: `Квиз с ID ${kviz_id} успешно добавлен в завершенные для пользователя с ID ${user_id}`
+                });
+            });
+        } catch (error) {
+            console.error("Неожиданная ошибка:", error);
+            return res.status(500).json({ error: "Неожиданная ошибка сервера", details: error.message });
+        }
+    }
+    async getCompletedKvizByUser(req, res) {
+        try {
+            const { user_id } = req.body;
+    
+            // Проверяем, передан ли user_id
+            if (!user_id) {
+                return res.status(400).json({ error: "Необходимо указать user_id" });
+            }
+    
+            // SQL-запрос для получения завершенных квизов пользователя
+            const sql = `
+                SELECT k.*
+                FROM kviz k
+                JOIN completed_kviz ck ON k.id = ck.kviz_id
+                WHERE ck.user_id = ?;
+            `;
+    
+            // Выполняем запрос к базе данных
+            db.all(sql, [user_id], (err, rows) => {
+                if (err) {
+                    console.error("Ошибка при получении завершенных квизов:", err);
+                    return res.status(500).json({ error: "Ошибка сервера", details: err.message });
+                }
+    
+                // Если нет завершенных квизов
+                if (rows.length === 0) {
+                    return res.status(404).json({ message: "У пользователя нет завершенных квизов" });
+                }
+    
+                // Возвращаем список завершенных квизов
+                return res.status(200).json({
+                    message: "Завершенные квизы успешно получены",
+                    kvizzes: rows
+                });
+            });
+        } catch (error) {
+            console.error("Неожиданная ошибка:", error);
+            return res.status(500).json({ error: "Неожиданная ошибка сервера", details: error.message });
+        }
+    }
+
 
 }
 

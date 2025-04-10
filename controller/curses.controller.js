@@ -148,6 +148,91 @@ class courseController{
             return res.status(500).json({ error: 'Неожиданная ошибка сервера', details: error.message });
         }
     }
+    async getCoursesByUserTopics(req, res) {
+        try {
+            const { user_id } = req.body;
+    
+            // Проверяем, передан ли user_id
+            if (!user_id) {
+                return res.status(400).json({ error: "Необходимо указать user_id" });
+            }
+    
+            // Получаем проценты пользователя
+            const getUserPercentagesSql = `
+                SELECT percent_by_topic
+                FROM users
+                WHERE id = ?;
+            `;
+            db.get(getUserPercentagesSql, [user_id], async (err, row) => {
+                if (err) {
+                    console.error("Ошибка при получении процентов пользователя:", err);
+                    return res.status(500).json({ error: "Ошибка сервера", details: err.message });
+                }
+    
+                if (!row) {
+                    return res.status(404).json({ message: "Пользователь не найден" });
+                }
+    
+                // Преобразуем JSON-строку в объект JavaScript
+                const percentByTopic = JSON.parse(row.percent_by_topic);
+    
+                // Формируем список тем, для которых пользователь имеет проценты > 0
+                const topicsWithPercentages = Object.keys(percentByTopic).filter(
+                    (topic) => percentByTopic[topic] > 0
+                );
+    
+                // Получаем числовые ID тем из таблицы topics
+                const getTopicIdsSql = `
+                    SELECT id
+                    FROM topics
+                    WHERE name IN (${topicsWithPercentages.map(() => '?').join(', ')});
+                `;
+                db.all(getTopicIdsSql, topicsWithPercentages, (err, topicRows) => {
+                    if (err) {
+                        console.error("Ошибка при получении ID тем:", err);
+                        return res.status(500).json({ error: "Ошибка сервера", details: err.message });
+                    }
+    
+                    // Извлекаем массив числовых ID тем
+                    const topicIds = topicRows.map((row) => row.id);
+    
+                    // Если нет подходящих тем
+                    if (topicIds.length === 0) {
+                        return res.status(404).json({ message: "Курсы по выбранным темам не найдены" });
+                    }
+    
+                    // SQL-запрос для получения курсов по темам пользователя
+                    const sql = `
+                        SELECT c.*
+                        FROM curses c
+                        WHERE c.topic_id IN (${topicIds.map(() => '?').join(', ')});
+                    `;
+    
+                    // Выполняем запрос к базе данных
+                    db.all(sql, topicIds, (err, rows) => {
+                        if (err) {
+                            console.error("Ошибка при получении курсов по темам пользователя:", err);
+                            return res.status(500).json({ error: "Ошибка сервера", details: err.message });
+                        }
+    
+                        // Если нет курсов по темам пользователя
+                        if (rows.length === 0) {
+                            return res.status(404).json({ message: "Курсы по выбранным темам не найдены" });
+                        }
+    
+                        // Возвращаем список курсов
+                        return res.status(200).json({
+                            message: "Курсы по выбранным темам успешно получены",
+                            courses: rows
+                        });
+                    });
+                });
+            });
+        } catch (error) {
+            console.error("Неожиданная ошибка:", error);
+            return res.status(500).json({ error: "Неожиданная ошибка сервера", details: error.message });
+        }
+    }
 }
 
 module.exports = new courseController()

@@ -10,4 +10,8 @@ router.post('/getSplashKviz', KvizController.getSplashKviz)
 router.get('/getAllKviz', KvizController.getAllKviz)
 router.post('/getPageKviz', KvizController.getPageKviz)
 
+
+router.post('/insertCompletedKviz', KvizController.insertCompletedKviz)
+router.post('/getCompletedKvizByUser', KvizController.getCompletedKvizByUser)
+
 module.exports = router
